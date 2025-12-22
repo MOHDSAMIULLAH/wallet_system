@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
 import { db } from "../db";
-import { users } from "../db/schema";
+import { users, wallets } from "../db/schema";
 import { eq } from "drizzle-orm";
 import { createHttpError } from "../utils/httpError";
 import { generateToken } from "../utils/jwt";
 import { comparePassword, hashPassword } from "../utils/password";
 import { ApiResponse } from "../types";
+import { v4 as uuidv4 } from "uuid";
 
 /**
  * Login endpoint
@@ -27,7 +28,7 @@ export const login = async (req: Request, res: Response) => {
   }
 
   // Verify password
-  const isValidPassword = comparePassword(password, user.password);
+  const isValidPassword = await comparePassword(password, user.password);
 
   if (!isValidPassword) {
     throw createHttpError(401, "Invalid email or password");
@@ -59,11 +60,11 @@ export const login = async (req: Request, res: Response) => {
  * Creates a new user account
  */
 export const register = async (req: Request, res: Response) => {
-  const { clientId, name, email, password, isAdmin = false } = req.body;
+  const { name, email, password, isAdmin = false } = req.body;
 
   // Validate input
-  if (!clientId || !name || !email || !password) {
-    throw createHttpError(400, "All fields are required: clientId, name, email, password");
+  if (!name || !email || !password) {
+    throw createHttpError(400, "All fields are required: name, email, password");
   }
 
   // Check if user already exists
@@ -76,18 +77,11 @@ export const register = async (req: Request, res: Response) => {
     throw createHttpError(409, "User with this email already exists");
   }
 
-  // Check if clientId already exists
-  const [existingClientId] = await db
-    .select()
-    .from(users)
-    .where(eq(users.clientId, clientId));
-
-  if (existingClientId) {
-    throw createHttpError(409, "User with this client ID already exists");
-  }
+  // Generate unique clientId
+  const clientId = `client_${uuidv4()}`;
 
   // Hash password
-  const hashedPassword = hashPassword(password);
+  const hashedPassword = await hashPassword(password);
 
   // Create user
   const [newUser] = await db
@@ -100,6 +94,12 @@ export const register = async (req: Request, res: Response) => {
       isAdmin: isAdmin,
     })
     .returning();
+
+  // Create wallet for new user
+  await db.insert(wallets).values({
+    userId: newUser.id,
+    balance: "0.00",
+  });
 
   // Generate JWT token
   const token = generateToken(newUser.id);

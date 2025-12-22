@@ -47,8 +47,8 @@ export class UserService {
 
     // Hash password or generate default one
     const hashedPassword = password 
-      ? hashPassword(password)
-      : hashPassword(`temp_${clientId}`);
+      ? await hashPassword(password)
+      : await hashPassword(`temp_${clientId}`);
 
     // Create user
     const [newUser] = await db

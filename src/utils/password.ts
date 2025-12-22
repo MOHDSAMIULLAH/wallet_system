@@ -1,13 +1,14 @@
-import * as crypto from "crypto";
+import * as bcrypt from "bcrypt";
+
+const SALT_ROUNDS = 10;
 
 /**
- * Hash a password using SHA-256
- * Note: For production, consider using bcrypt or argon2 for better security
+ * Hash a password using bcrypt
  * @param password - Plain text password
  * @returns Hashed password
  */
-export const hashPassword = (password: string): string => {
-  return crypto.createHash("sha256").update(password).digest("hex");
+export const hashPassword = async (password: string): Promise<string> => {
+  return await bcrypt.hash(password, SALT_ROUNDS);
 };
 
 /**
@@ -16,7 +17,6 @@ export const hashPassword = (password: string): string => {
  * @param hashedPassword - Hashed password to compare against
  * @returns True if passwords match
  */
-export const comparePassword = (password: string, hashedPassword: string): boolean => {
-  const hash = hashPassword(password);
-  return hash === hashedPassword;
+export const comparePassword = async (password: string, hashedPassword: string): Promise<boolean> => {
+  return await bcrypt.compare(password, hashedPassword);
 };
