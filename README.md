@@ -4,6 +4,9 @@ A robust backend system for managing client wallets and orders with atomic trans
 
 ## 🎯 Features
 
+- **User Authentication**: JWT-based authentication with secure login/register
+- **User Management**: Complete CRUD operations for user accounts
+- **Role-Based Access Control**: Admin and regular user roles with permissions
 - **Wallet Management**: Credit/debit operations with transaction logging
 - **Order Processing**: Create orders with automatic wallet deduction
 - **Atomic Operations**: Database transactions ensure data consistency
@@ -11,6 +14,7 @@ A robust backend system for managing client wallets and orders with atomic trans
 - **Error Handling**: Comprehensive error handling and validation
 - **Rate Limiting**: Protection against abuse
 - **Audit Trail**: Complete ledger of all transactions
+- **Password Security**: Bcrypt hashing for secure password storage
 
 ## 🏗️ Architecture
 
@@ -28,7 +32,9 @@ users
 ├── id (PK)
 ├── client_id (unique)
 ├── name
-├── email
+├── email (unique)
+├── password (hashed)
+├── is_admin (boolean)
 └── timestamps
 
 wallets
@@ -88,7 +94,8 @@ DATABASE_URL=postgresql://username:password@localhost:5432/wallet_system
 PORT=3000
 NODE_ENV=development
 FULFILLMENT_API_URL=https://jsonplaceholder.typicode.com/posts
-ADMIN_API_KEY=your-secure-admin-api-key-here
+JWT_SECRET=your-jwt-secret-change-in-production
+JWT_EXPIRES_IN=7d
 ```
 
 4. **Setup Database**
@@ -119,12 +126,209 @@ npm start
 
 ## 📡 API Documentation
 
+### Authentication Endpoints
+
+#### 1. Register User
+```bash
+POST /auth/register
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "securePassword123",
+  "isAdmin": false
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Registration successful",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "id": 1,
+      "clientId": "client_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "isAdmin": false
+    }
+  }
+}
+```
+
+#### 2. Login
+```bash
+POST /auth/login
+Content-Type: application/json
+
+{
+  "email": "john@example.com",
+  "password": "securePassword123"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "id": 1,
+      "clientId": "client_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "isAdmin": false
+    }
+  }
+}
+```
+
+#### 3. Get Profile
+```bash
+GET /auth/profile
+Authorization: Bearer <JWT_TOKEN>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": 1,
+      "clientId": "client_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "isAdmin": false
+    }
+  }
+}
+```
+
+### User Management Endpoints
+
+#### 4. Create User (Manual)
+```bash
+POST /users/create
+Content-Type: application/json
+
+{
+  "name": "Jane Smith",
+  "email": "jane@example.com",
+  "client_id": "CUSTOM_CLIENT_ID",
+  "is_admin": false
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "User created successfully",
+  "data": {
+    "id": 2,
+    "clientId": "CUSTOM_CLIENT_ID",
+    "name": "Jane Smith",
+    "email": "jane@example.com",
+    "isAdmin": false
+  }
+}
+```
+
+#### 5. Get All Users
+```bash
+GET /users?limit=10&offset=0
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "count": 2,
+  "data": [
+    {
+      "id": 1,
+      "clientId": "CLIENT123",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "isAdmin": false
+    }
+  ]
+}
+```
+
+#### 6. Get User by Client ID
+```bash
+GET /users/CLIENT123
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "clientId": "CLIENT123",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "wallet": {
+      "balance": "1000.50"
+    }
+  }
+}
+```
+
+#### 7. Update User
+```bash
+PATCH /users/CLIENT123
+Authorization: Bearer <JWT_TOKEN_WITH_ADMIN_ROLE>
+Content-Type: application/json
+
+{
+  "name": "John Updated",
+  "email": "john.new@example.com"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "User updated successfully",
+  "data": {
+    "id": 1,
+    "clientId": "CLIENT123",
+    "name": "John Updated",
+    "email": "john.new@example.com"
+  }
+}
+```
+
+#### 8. Delete User
+```bash
+DELETE /users/CLIENT123
+Authorization: Bearer <JWT_TOKEN_WITH_ADMIN_ROLE>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "User and associated data deleted successfully"
+}
+```
+
 ### Admin Endpoints
 
-#### 1. Credit Wallet
+#### 9. Credit Wallet
 ```bash
 POST /admin/wallet/credit
-Authorization: Bearer <ADMIN_API_KEY>
+Authorization: Bearer <JWT_TOKEN_WITH_ADMIN_ROLE>
 Content-Type: application/json
 
 {
@@ -147,10 +351,10 @@ Content-Type: application/json
 }
 ```
 
-#### 2. Debit Wallet
+#### 10. Debit Wallet
 ```bash
 POST /admin/wallet/debit
-Authorization: Bearer <ADMIN_API_KEY>
+Authorization: Bearer <JWT_TOKEN_WITH_ADMIN_ROLE>
 Content-Type: application/json
 
 {
@@ -175,7 +379,7 @@ Content-Type: application/json
 
 ### Client Endpoints
 
-#### 3. Create Order
+#### 11. Create Order
 ```bash
 POST /orders
 client-id: CLIENT123
@@ -201,7 +405,7 @@ Content-Type: application/json
 }
 ```
 
-#### 4. Get Order Details
+#### 12. Get Order Details
 ```bash
 GET /orders/{order_id}
 client-id: CLIENT123
@@ -222,7 +426,7 @@ client-id: CLIENT123
 }
 ```
 
-#### 5. Get Wallet Balance
+#### 13. Get Wallet Balance
 ```bash
 GET /wallet/balance
 client-id: CLIENT123
@@ -250,10 +454,13 @@ client-id: CLIENT123
 ```
 
 Status codes:
+- `200` - OK (successful request)
+- `201` - Created (resource created successfully)
 - `400` - Bad Request (validation errors)
-- `401` - Unauthorized (missing/invalid auth)
-- `403` - Forbidden (invalid API key)
+- `401` - Unauthorized (missing/invalid JWT token)
+- `403` - Forbidden (insufficient permissions - admin role required)
 - `404` - Not Found (resource not found)
+- `409` - Conflict (duplicate resource, e.g., email already exists)
 - `429` - Too Many Requests (rate limit exceeded)
 - `500` - Internal Server Error
 - `502` - Bad Gateway (fulfillment API error)
@@ -263,21 +470,50 @@ Status codes:
 
 ### Using cURL
 
-**1. Credit wallet:**
+**1. Register a new admin user:**
+```bash
+curl -X POST http://localhost:3000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Admin User",
+    "email": "admin@example.com",
+    "password": "password123",
+    "isAdmin": true
+  }'
+```
+
+**2. Login as admin as admin:**
+```bash
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@example.com",
+    "password": "password123"
+  }'
+# Save the JWT token from response for admin operations
+```
+
+**3. Get profile:**
+```bash
+curl http://localhost:3000/auth/profile \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**4. Credit wallet (Admin only - requires JWT with admin role):**
 ```bash
 curl -X POST http://localhost:3000/admin/wallet/credit \
-  -H "Authorization: Bearer your-secure-admin-api-key" \
+  -H "Authorization: Bearer YOUR_ADMIN_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"client_id": "TEST_CLIENT", "amount": 1000}'
 ```
 
-**2. Check balance:**
+**5. Check balance:**
 ```bash
 curl http://localhost:3000/wallet/balance \
   -H "client-id: TEST_CLIENT"
 ```
 
-**3. Create order:**
+**6. Create order:**
 ```bash
 curl -X POST http://localhost:3000/orders \
   -H "client-id: TEST_CLIENT" \
@@ -285,10 +521,20 @@ curl -X POST http://localhost:3000/orders \
   -d '{"amount": 50.00}'
 ```
 
-**4. Get order details:**
+**7. Get order details:**
 ```bash
 curl http://localhost:3000/orders/ORD-1703251234567-a1b2c3d4 \
   -H "client-id: TEST_CLIENT"
+```
+
+**8. Get all users:**
+```bash
+curl http://localhost:3000/users?limit=10
+```
+
+**9. Get user by client ID:**
+```bash
+curl http://localhost:3000/users/TEST_CLIENT
 ```
 
 ### Using Postman
@@ -297,11 +543,16 @@ Import the following collection or create requests manually with the endpoints a
 
 ## 🔒 Security Features
 
-1. **Admin Authentication**: Bearer token authentication for admin endpoints
-2. **Rate Limiting**: 100 requests per minute per IP
-3. **Input Validation**: Zod schema validation for all inputs
-4. **SQL Injection Prevention**: Parameterized queries via Drizzle ORM
-5. **Error Masking**: Generic error messages in production
+1. **JWT Authentication**: Secure token-based authentication for user sessions
+2. **Password Hashing**: Bcrypt hashing with salt for secure password storage
+3. **Role-Based Access Control**: Admin endpoints protected by JWT authentication with admin role verification
+4. **Unified Authentication**: All protected routes use JWT tokens (no separate API keys)
+5. **Rate Limiting**: 100 requests per minute per IP
+6. **Input Validation**: Zod schema validation for all inputs
+7. **SQL Injection Prevention**: Parameterized queries via Drizzle ORM
+8. **Error Masking**: Generic error messages in production
+9. **Email Uniqueness**: Prevents duplicate accounts
+10. **Token Expiration**: JWT tokens expire after configured duration
 
 ## 🎯 Design Decisions
 
@@ -328,9 +579,16 @@ PENDING → wallet deduction → fulfillment API → COMPLETED
 - **Failure handling**: Order marked as FAILED, wallet already deducted
 
 ### 5. Auto-user Creation
-- Users are automatically created on first transaction
-- Simplifies client onboarding
-- Wallet created automatically with user
+- Users can be created via registration endpoint or manually
+- Wallet created automatically with each new user
+- JWT token issued upon registration for immediate authentication
+
+### 6. Authentication Flow
+```
+Registration → User Created → Wallet Created → JWT Issued
+Login → Credentials Verified → JWT Issued
+Protected Routes → JWT Verified → User Data Attached to Request
+```
 
 ## 📊 Scalability Considerations
 
@@ -376,6 +634,11 @@ PENDING → wallet deduction → fulfillment API → COMPLETED
 5. **Duplicate Requests**: Unique order IDs prevent duplicates
 6. **Database Connection Loss**: Graceful error handling
 7. **Rate Limiting**: 429 response when limit exceeded
+8. **Duplicate Email Registration**: 409 Conflict response
+9. **Invalid Credentials**: Secure error messages without exposing details
+10. **Expired JWT Tokens**: 401 Unauthorized with clear message
+11. **Missing Authorization**: Proper 401/403 responses
+12. **User Deletion Cascade**: Properly handles deletion of user with associated data
 
 ### Transaction Safety
 
@@ -399,30 +662,40 @@ assignment/
 │   │   └── index.ts              # Configuration management
 │   ├── db/
 │   │   ├── schema/
-│   │   │   ├── users.ts          # User schema
+│   │   │   ├── users.ts          # User schema with auth
 │   │   │   ├── wallets.ts        # Wallet schema
 │   │   │   ├── orders.ts         # Order schema
 │   │   │   ├── ledger.ts         # Ledger schema
 │   │   │   └── index.ts          # Schema exports
 │   │   └── index.ts              # Database connection
 │   ├── services/
+│   │   ├── userService.ts        # User business logic
 │   │   ├── walletService.ts      # Wallet business logic
 │   │   ├── orderService.ts       # Order business logic
 │   │   └── fulfillmentService.ts # External API integration
 │   ├── controllers/
+│   │   ├── authController.ts     # Authentication endpoints
+│   │   ├── userController.ts     # User management endpoints
 │   │   ├── adminController.ts    # Admin endpoints
 │   │   ├── orderController.ts    # Order endpoints
 │   │   └── walletController.ts   # Wallet endpoints
 │   ├── routes/
+│   │   ├── authRoutes.ts         # Auth routes
+│   │   ├── userRoutes.ts         # User routes
 │   │   ├── adminRoutes.ts        # Admin routes
 │   │   ├── orderRoutes.ts        # Order routes
 │   │   └── walletRoutes.ts       # Wallet routes
 │   ├── middleware/
-│   │   ├── auth.ts               # Authentication
+│   │   ├── auth.ts               # Authentication & authorization
 │   │   ├── errorHandler.ts       # Error handling
 │   │   └── rateLimiter.ts        # Rate limiting
+│   ├── utils/
+│   │   ├── jwt.ts                # JWT utilities
+│   │   ├── password.ts           # Password hashing utilities
+│   │   └── httpError.ts          # Error utilities
 │   ├── types/
-│   │   └── index.ts              # TypeScript types
+│   │   ├── index.ts              # TypeScript types
+│   │   └── express.d.ts          # Express type extensions
 │   ├── app.ts                    # Express app setup
 │   └── server.ts                 # Server entry point
 ├── drizzle/                      # Migrations
@@ -446,7 +719,18 @@ The following prompts were used to develop this system:
    - "Create a service to handle external fulfillment API calls with retry logic"
    - "Implement comprehensive error handling middleware for Express"
 
-3. **Advanced Features**
+3. **Authentication & Security**
+   - "Add JWT-based authentication with login and register endpoints"
+   - "Implement password hashing using bcrypt with proper security practices"
+   - "Create role-based access control with admin and user permissions"
+   - "Add authentication middleware for protecting routes"
+
+4. **User Management**
+   - "Create CRUD endpoints for user management with proper authorization"
+   - "Implement user service layer with database operations"
+   - "Add validation for user creation and updates"
+
+5. **Advanced Features**
    - "Add rate limiting middleware with in-memory storage"
    - "Create audit trail system with ledger entries tracking before/after balances"
    - "Implement graceful shutdown with database connection cleanup"

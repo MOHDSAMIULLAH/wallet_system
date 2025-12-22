@@ -8,36 +8,6 @@ import { eq } from "drizzle-orm";
 import { AuthenticatedUser } from "../types";
 
 /**
- * Admin authentication middleware
- * Checks for valid admin API key in Authorization header
- */
-export const adminAuth = (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader) {
-      throw createHttpError(401, "Authorization header required");
-    }
-
-    // Expected format: "Bearer <api-key>"
-    const parts = authHeader.split(" ");
-    if (parts.length !== 2 || parts[0] !== "Bearer") {
-      throw createHttpError(401, "Invalid authorization format. Use: Bearer <api-key>");
-    }
-
-    const apiKey = parts[1];
-
-    if (apiKey !== config.admin.apiKey) {
-      throw createHttpError(403, "Invalid API key");
-    }
-
-    next();
-  } catch (error) {
-    next(error);
-  }
-};
-
-/**
  * User authentication middleware
  * Validates JWT token and attaches user info to request
  */
