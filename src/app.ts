@@ -7,6 +7,7 @@ import { rateLimiter } from "./middleware/rateLimiter";
 
 // Import routes
 import adminRoutes from "./routes/adminRoutes";
+import authRoutes from "./routes/authRoutes";
 import orderRoutes from "./routes/orderRoutes";
 import walletRoutes from "./routes/walletRoutes";
 import userRoutes from "./routes/userRoutes";
@@ -33,6 +34,7 @@ app.get("/health", (req, res) => {
 
 // API routes
 app.use("/admin", adminRoutes);
+app.use("/auth", authRoutes);
 app.use("/orders", orderRoutes);
 app.use("/wallet", walletRoutes);
 app.use("/users", userRoutes);

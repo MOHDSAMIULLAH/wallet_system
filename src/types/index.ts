@@ -5,6 +5,14 @@ export interface ApiResponse<T = any> {
   message?: string;
 }
 
+export interface AuthenticatedUser {
+  id: number;
+  clientId: string;
+  name: string;
+  email: string;
+  isAdmin: boolean;
+}
+
 export interface WalletCreditRequest {
   client_id: string;
   amount: number;

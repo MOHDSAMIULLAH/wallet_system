@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { creditWallet, debitWallet } from "../controllers/adminController";
-import { adminAuth } from "../middleware/auth";
+import { requireAdmin } from "../middleware/auth";
 
 const router = Router();
 
-router.use(adminAuth);
+// All routes require admin role (authenticated user with isAdmin=true)
+router.use(requireAdmin);
 
 router.post("/wallet/credit", creditWallet);
 router.post("/wallet/debit", debitWallet);

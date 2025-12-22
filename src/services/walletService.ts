@@ -3,6 +3,7 @@ import { users, wallets, ledgerEntries } from "../db/schema";
 import { eq, sql } from "drizzle-orm";
 import { TransactionType } from "../types";
 import { createHttpError } from "../utils/httpError";
+import { hashPassword } from "../utils/password";
 
 export class WalletService {
   /**
@@ -21,6 +22,7 @@ export class WalletService {
           clientId,
           name: `User ${clientId}`,
           email: `${clientId}@example.com`,
+          password: hashPassword(`temp_${clientId}`),
           isAdmin: false,
         })
         .returning();
@@ -65,8 +67,14 @@ export class WalletService {
       throw createHttpError(400, "Amount must be greater than 0");
     }
 
-    // Get or create user
-    const user = await this.getOrCreateUser(clientId);
+    // Get user (do not auto-create)
+    const user = await db.query.users.findFirst({
+      where: eq(users.clientId, clientId),
+    });
+
+    if (!user) {
+      throw createHttpError(404, "User not found");
+    }
 
     // Get current wallet
     const wallet = await db.query.wallets.findFirst({

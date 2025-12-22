@@ -2,6 +2,7 @@ import { db } from "../db";
 import { users, wallets } from "../db/schema";
 import { eq } from "drizzle-orm";
 import { createHttpError } from "../utils/httpError";
+import { hashPassword } from "../utils/password";
 import { v4 as uuidv4 } from "uuid";
 
 export class UserService {
@@ -12,12 +13,14 @@ export class UserService {
   async createUser(data: {
     name?: string;
     email?: string;
+    password?: string;
     clientId?: string;
     isAdmin?: boolean;
   }) {
     const {
       name,
       email,
+      password,
       clientId = `client_${uuidv4()}`,
       isAdmin = false,
     } = data;
@@ -42,6 +45,11 @@ export class UserService {
       }
     }
 
+    // Hash password or generate default one
+    const hashedPassword = password 
+      ? hashPassword(password)
+      : hashPassword(`temp_${clientId}`);
+
     // Create user
     const [newUser] = await db
       .insert(users)
@@ -49,6 +57,7 @@ export class UserService {
         clientId,
         name: name || `User ${clientId}`,
         email: email || `${clientId}@example.com`,
+        password: hashedPassword,
         isAdmin,
       })
       .returning();

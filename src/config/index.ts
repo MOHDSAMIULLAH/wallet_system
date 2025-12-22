@@ -17,4 +17,8 @@ export const config = {
   admin: {
     apiKey: process.env.ADMIN_API_KEY || "your-secure-admin-api-key",
   },
+  jwt: {
+    secret: process.env.JWT_SECRET || "your-jwt-secret-change-in-production",
+    expiresIn: process.env.JWT_EXPIRES_IN || "7d",
+  },
 };
