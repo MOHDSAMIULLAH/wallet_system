@@ -10,8 +10,8 @@ AI_PROMPTS.md
 POSTMAN_GUIDE.md
 test-api.ps1
 USER_MANAGEMENT_API.md
-Wallet_Transaction_System.postman_collection.json
 QUICKSTART.md
 RBAC_GUIDE.md
 USER_MANAGEMENT_API.md
 AUTH_API.md
+Wallet System API.postman_collection.json
