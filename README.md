@@ -8,13 +8,15 @@ A robust backend system for managing client wallets and orders with atomic trans
 - **User Management**: Complete CRUD operations for user accounts
 - **Role-Based Access Control**: Admin and regular user roles with permissions
 - **Wallet Management**: Credit/debit operations with transaction logging
-- **Order Processing**: Create orders with automatic wallet deduction
+- **Order Processing**: Create and track orders with automatic wallet deduction
+- **Order History**: Retrieve all orders for a client with sorting by creation date
 - **Atomic Operations**: Database transactions ensure data consistency
 - **External Integration**: Fulfillment API integration with retry mechanism
 - **Error Handling**: Comprehensive error handling and validation
 - **Rate Limiting**: Protection against abuse
 - **Audit Trail**: Complete ledger of all transactions
 - **Password Security**: Bcrypt hashing for secure password storage
+- **Health Monitoring**: Health check endpoint for system status
 
 ## 🏗️ Architecture
 
@@ -125,6 +127,22 @@ npm start
 ```
 
 ## 📡 API Documentation
+
+### Health Check Endpoint
+
+#### Health Check
+```bash
+GET /health
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Server is healthy",
+  "timestamp": "2025-12-23T10:30:45.123Z"
+}
+```
 
 ### Authentication Endpoints
 
@@ -405,7 +423,36 @@ Content-Type: application/json
 }
 ```
 
-#### 12. Get Order Details
+#### 12. Get All Orders for Client
+```bash
+GET /orders
+client-id: CLIENT123
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "orderId": "ORD-1703251234567-a1b2c3d4",
+      "amount": 99.99,
+      "status": "COMPLETED",
+      "fulfillmentId": "101",
+      "createdAt": "2025-12-23T10:30:45.123Z"
+    },
+    {
+      "orderId": "ORD-1703251234568-b2c3d4e5",
+      "amount": 49.99,
+      "status": "COMPLETED",
+      "fulfillmentId": "102",
+      "createdAt": "2025-12-23T09:15:30.456Z"
+    }
+  ]
+}
+```
+
+#### 13. Get Order Details
 ```bash
 GET /orders/{order_id}
 client-id: CLIENT123
@@ -420,13 +467,13 @@ client-id: CLIENT123
     "amount": 99.99,
     "status": "COMPLETED",
     "fulfillmentId": "101",
-    "createdAt": "2024-12-22T10:30:45.123Z",
-    "updatedAt": "2024-12-22T10:30:46.789Z"
+    "createdAt": "2025-12-23T10:30:45.123Z",
+    "updatedAt": "2025-12-23T10:30:46.789Z"
   }
 }
 ```
 
-#### 13. Get Wallet Balance
+#### 14. Get Wallet Balance
 ```bash
 GET /wallet/balance
 client-id: CLIENT123
@@ -439,7 +486,7 @@ client-id: CLIENT123
   "data": {
     "clientId": "CLIENT123",
     "balance": 650.51,
-    "lastUpdated": "2024-12-22T10:30:46.789Z"
+    "lastUpdated": "2025-12-23T10:30:46.789Z"
   }
 }
 ```
@@ -468,7 +515,146 @@ Status codes:
 
 ## 🧪 Testing
 
-### Using cURL
+### Complete cURL Command Reference
+
+Below are all the cURL commands corresponding to the Postman collection:
+
+#### Authentication Endpoints
+
+**Register User:**
+```bash
+curl -X POST http://localhost:3000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user1@example.com",
+    "password": "SecurePass123!",
+    "name": "John Doe",
+    "isAdmin": true
+  }'
+```
+
+**Login:**
+```bash
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "SecurePass123!"
+  }'
+```
+> **Note:** Save the JWT token from the response to use in subsequent authenticated requests.
+
+**Get Profile:**
+```bash
+curl -X GET http://localhost:3000/auth/profile \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+#### User Management Endpoints
+
+**Get All Users:**
+```bash
+curl -X GET http://localhost:3000/users
+```
+
+**Create User:**
+```bash
+curl -X POST http://localhost:3000/users/create \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "newuser@example.com",
+    "password": "SecurePass123!",
+    "name": "Jane Smith"
+  }'
+```
+
+**Get User by Client ID:**
+```bash
+curl -X GET http://localhost:3000/users/YOUR_CLIENT_ID
+```
+
+**Update User (Admin only):**
+```bash
+curl -X PATCH http://localhost:3000/users/YOUR_CLIENT_ID \
+  -H "Authorization: Bearer YOUR_ADMIN_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Updated Name",
+    "email": "updated@example.com",
+    "isAdmin": true
+  }'
+```
+
+**Delete User (Admin only):**
+```bash
+curl -X DELETE http://localhost:3000/users/YOUR_CLIENT_ID \
+  -H "Authorization: Bearer YOUR_ADMIN_JWT_TOKEN"
+```
+
+#### Wallet Endpoints
+
+**Get Wallet Balance:**
+```bash
+curl -X GET http://localhost:3000/wallet/balance \
+  -H "client-id: YOUR_CLIENT_ID"
+```
+
+#### Order Endpoints
+
+**Create Order:**
+```bash
+curl -X POST http://localhost:3000/orders \
+  -H "client-id: YOUR_CLIENT_ID" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 50.00
+  }'
+```
+
+**Get All Orders for Client:**
+```bash
+curl -X GET http://localhost:3000/orders \
+  -H "client-id: YOUR_CLIENT_ID"
+```
+
+**Get Order Details:**
+```bash
+curl -X GET http://localhost:3000/orders/YOUR_ORDER_ID \
+  -H "client-id: YOUR_CLIENT_ID"
+```
+
+#### Admin Endpoints
+
+**Credit Wallet (Admin only):**
+```bash
+curl -X POST http://localhost:3000/admin/wallet/credit \
+  -H "Authorization: Bearer YOUR_ADMIN_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_id": "YOUR_CLIENT_ID",
+    "amount": 5500.00
+  }'
+```
+
+**Debit Wallet (Admin only):**
+```bash
+curl -X POST http://localhost:3000/admin/wallet/debit \
+  -H "Authorization: Bearer YOUR_ADMIN_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_id": "YOUR_CLIENT_ID",
+    "amount": 25.00
+  }'
+```
+
+#### System Endpoints
+
+**Health Check:**
+```bash
+curl -X GET http://localhost:3000/health
+```
+
+### Quick Testing Workflow
 
 **1. Register a new admin user:**
 ```bash
@@ -521,25 +707,86 @@ curl -X POST http://localhost:3000/orders \
   -d '{"amount": 50.00}'
 ```
 
-**7. Get order details:**
+**7. Get all orders for client:**
+```bash
+curl http://localhost:3000/orders \
+  -H "client-id: TEST_CLIENT"
+```
+
+**8. Get order details:**
 ```bash
 curl http://localhost:3000/orders/ORD-1703251234567-a1b2c3d4 \
   -H "client-id: TEST_CLIENT"
 ```
 
-**8. Get all users:**
+**9. Get all users:**
 ```bash
 curl http://localhost:3000/users?limit=10
 ```
 
-**9. Get user by client ID:**
+**10. Get user by client ID:**
 ```bash
 curl http://localhost:3000/users/TEST_CLIENT
 ```
 
+**11. Update user (Admin only):**
+```bash
+curl -X PATCH http://localhost:3000/users/TEST_CLIENT \
+  -H "Authorization: Bearer YOUR_ADMIN_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Updated Name",
+    "email": "updated@example.com"
+  }'
+```
+
+**12. Delete user (Admin only):**
+```bash
+curl -X DELETE http://localhost:3000/users/TEST_CLIENT \
+  -H "Authorization: Bearer YOUR_ADMIN_JWT_TOKEN"
+```
+
+**13. Debit wallet (Admin only):**
+```bash
+curl -X POST http://localhost:3000/admin/wallet/debit \
+  -H "Authorization: Bearer YOUR_ADMIN_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"client_id": "TEST_CLIENT", "amount": 250.00}'
+```
+
+**14. Health check:**
+```bash
+curl http://localhost:3000/health
+```
+
 ### Using Postman
 
-Import the following collection or create requests manually with the endpoints above.
+The project includes a complete Postman collection file: `Wallet System API.postman_collection.json`
+
+**Import Instructions:**
+1. Open Postman
+2. Click "Import" button
+3. Select the `Wallet System API.postman_collection.json` file
+4. The collection will be imported with all endpoints organized in folders
+
+**Collection Features:**
+- Pre-configured endpoints for all API operations
+- Environment variables for `baseUrl`, `token`, and `clientId`
+- Automatic token extraction after login/register
+- Organized into folders: Auth, Users, Wallet, Orders, Admin, and Health Check
+
+**Quick Start with Postman:**
+1. Import the collection
+2. Set the `baseUrl` variable to `http://localhost:3000` (default)
+3. Run "Register User" or "Login" to get a JWT token (saved automatically)
+4. Use the token for authenticated endpoints
+5. The `clientId` is automatically saved from registration/login responses
+
+**Exporting cURL from Postman:**
+- Click the three dots (...) next to any request
+- Select "Code snippet"
+- Choose "cURL" from the dropdown
+- Copy the generated cURL command
 
 ## 🔒 Security Features
 
@@ -718,6 +965,7 @@ The following prompts were used to develop this system:
    - "Implement atomic wallet deduction with row-level locking in Drizzle ORM"
    - "Create a service to handle external fulfillment API calls with retry logic"
    - "Implement comprehensive error handling middleware for Express"
+   - "Add endpoint to retrieve all orders for a client with proper filtering"
 
 3. **Authentication & Security**
    - "Add JWT-based authentication with login and register endpoints"
