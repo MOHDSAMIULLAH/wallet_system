@@ -759,34 +759,6 @@ curl -X POST http://localhost:3000/admin/wallet/debit \
 curl http://localhost:3000/health
 ```
 
-### Using Postman
-
-The project includes a complete Postman collection file: `Wallet System API.postman_collection.json`
-
-**Import Instructions:**
-1. Open Postman
-2. Click "Import" button
-3. Select the `Wallet System API.postman_collection.json` file
-4. The collection will be imported with all endpoints organized in folders
-
-**Collection Features:**
-- Pre-configured endpoints for all API operations
-- Environment variables for `baseUrl`, `token`, and `clientId`
-- Automatic token extraction after login/register
-- Organized into folders: Auth, Users, Wallet, Orders, Admin, and Health Check
-
-**Quick Start with Postman:**
-1. Import the collection
-2. Set the `baseUrl` variable to `http://localhost:3000` (default)
-3. Run "Register User" or "Login" to get a JWT token (saved automatically)
-4. Use the token for authenticated endpoints
-5. The `clientId` is automatically saved from registration/login responses
-
-**Exporting cURL from Postman:**
-- Click the three dots (...) next to any request
-- Select "Code snippet"
-- Choose "cURL" from the dropdown
-- Copy the generated cURL command
 
 ## 🔒 Security Features
 
