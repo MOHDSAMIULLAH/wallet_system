@@ -7,6 +7,7 @@ import { z } from "zod";
 const createUserSchema = z.object({
   name: z.string().optional(),
   email: z.string().email("Invalid email address").optional(),
+  password: z.string().min(6, "Password must be at least 6 characters").optional(),
   client_id: z.string().optional(),
   is_admin: z.boolean().optional(),
 });
@@ -26,11 +27,12 @@ export const createUser = async (req: Request, res: Response) => {
     throw createHttpError(400, validation.error.errors[0].message);
   }
 
-  const { name, email, client_id, is_admin } = validation.data;
+  const { name, email, password, client_id, is_admin } = validation.data;
 
   const result = await userService.createUser({
     name,
     email,
+    password,
     clientId: client_id,
     isAdmin: is_admin,
   });

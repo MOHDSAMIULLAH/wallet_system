@@ -22,6 +22,7 @@ export const login = async (req: Request, res: Response) => {
 
   // Find user by email
   const [user] = await db.select().from(users).where(eq(users.email, email));
+  console.log(" User:", user);
 
   if (!user) {
     throw createHttpError(401, "Invalid email or password");
@@ -29,6 +30,7 @@ export const login = async (req: Request, res: Response) => {
 
   // Verify password
   const isValidPassword = await comparePassword(password, user.password);
+  console.log(" isValidPassword:", isValidPassword);
 
   if (!isValidPassword) {
     throw createHttpError(401, "Invalid email or password");
